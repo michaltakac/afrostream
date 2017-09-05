@@ -13,71 +13,70 @@
       // Socket.io stuff
       var socket = io('http://localhost:3000');
 
+      socket.on('mouseenter', function (data) {
+        console.log(data);
+      });
+      socket.on('mouseleave', function (data) {
+        console.log(data);
+      });
+
       // Aframe stuff
       AFRAME.registerSystem('elixir', {
         schema: {},
   
         init: function(){
+          const self = this
           const sceneEl = this.sceneEl
-  
-          var els = sceneEl.querySelectorAll('*')
 
-          els.forEach(function(el) {
-            console.log(el.attributes)
-          })
+          if (sceneEl.hasLoaded) {
+            run();
+          } else {
+            sceneEl.addEventListener('loaded', run);
+          }
+
+          function run() {
+            self.box = document.querySelector('a-box')
+            console.log(self.box.attributes)
+
+            function mouseEnter() {
+              const rotation = self.box.components.rotation.data
+              console.log(rotation)
+              const newRotation = rotation.x + 10
+              console.log(newRotation)
+              self.box.setAttribute('rotation', newRotation + ' 0 0')
+              console.log(self.box.getAttribute('rotation'))
+              socket.emit('mouseenter', {
+                user: userId,
+                rotation: {
+                  x: rotation.x + 10,
+                  y: rotation.y,
+                  z: rotation.z
+                }
+              });
+            }
+
+            self.box.addEventListener('mouseenter', mouseEnter)
+
+            socket.on('mouseenter', function (data) {
+              console.log(data);
+              self.box.setAttribute('rotation', data.rotation)
+            });
+          }
         },
-  
-        tick: function(t, dt) {
-          if (dt) { return; }
-          //console.log(t)
+
+        update: function(newData, oldData) {
+          console.log(oldData)
+          console.log(newData)
+          console.log(this.data)
+          console.log('updated')
         }
       })
-  
-      AFRAME.registerComponent('change-color-on-hover', {
-        schema: {
-          color: {default: 'red'}
-        },
-        init: function () {
-          var self = this
-          var data = this.data;
-          var el = this.el;  // <a-box>
-          var defaultColor = el.getAttribute('material').color;
-          var defaultPosition = el.getAttribute('position')
-          el.addEventListener('mouseenter', function () {
-            el.setAttribute('color', data.color);
-            el.setAttribute('position', {
-              x: defaultPosition.x + 1,
-              y: defaultPosition.y,
-              z: defaultPosition.z
-            });
-            socket.emit('mouseenter', {
-              user: userId,
-              color: data.color,
-              position: el.getAttribute('position')
-            });
-          });
-          el.addEventListener('mouseleave', function () {
-            el.setAttribute('color', defaultColor);
-            el.setAttribute('position', defaultPosition);
-            socket.emit('mouseenter', {
-              user: userId,
-              color: el.getAttribute('material').color,
-              position: el.getAttribute('position')
-            });
-          });
-        }
-      });
     </script>
   </head>
   <body>
     <a-scene stats elixir>
-      <a-assets>
-        <script id="avatar-template" type="text/html">
-          <a-sphere></a-sphere>
-        </script>
-      </a-assets>
       <a-entity position="0 0 -1">
-        <a-box position="-1 0.5 -3" rotation="0 45 0" color="green" change-color-on-hover="color: blue"></a-box>
+        <a-box position="-1 0.5 -3" rotation="0 45 0" color="green"></a-box>
         <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
         <a-cylinder position="2 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
       </a-entity>
