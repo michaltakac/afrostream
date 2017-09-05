@@ -5,21 +5,26 @@
     <title>Hello, World! - A-Frame</title>
     <meta name="description" content="Hello, World! - A-Frame">
     <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="node_modules/socket.io-client/dist/socket.io.js"></script>
 
     <script type="text/javascript">
+      const userId = Math.random()
+
+      // Socket.io stuff
+      var socket = io('http://localhost:3000');
+
+      // Aframe stuff
       AFRAME.registerSystem('elixir', {
         schema: {},
   
         init: function(){
-          console.log('test')
-          console.log(this)
-  
           const sceneEl = this.sceneEl
   
-          var els = sceneEl.querySelectorAll('*');
-          for (var i = 0; i < els.length; i++) {
-            console.log(els[i].attributes);
-          }
+          var els = sceneEl.querySelectorAll('*')
+
+          els.forEach(function(el) {
+            console.log(el.attributes)
+          })
         },
   
         tick: function(t, dt) {
@@ -33,14 +38,32 @@
           color: {default: 'red'}
         },
         init: function () {
+          var self = this
           var data = this.data;
           var el = this.el;  // <a-box>
           var defaultColor = el.getAttribute('material').color;
+          var defaultPosition = el.getAttribute('position')
           el.addEventListener('mouseenter', function () {
             el.setAttribute('color', data.color);
+            el.setAttribute('position', {
+              x: defaultPosition.x + 1,
+              y: defaultPosition.y,
+              z: defaultPosition.z
+            });
+            socket.emit('mouseenter', {
+              user: userId,
+              color: data.color,
+              position: el.getAttribute('position')
+            });
           });
           el.addEventListener('mouseleave', function () {
             el.setAttribute('color', defaultColor);
+            el.setAttribute('position', defaultPosition);
+            socket.emit('mouseenter', {
+              user: userId,
+              color: el.getAttribute('material').color,
+              position: el.getAttribute('position')
+            });
           });
         }
       });
@@ -64,13 +87,4 @@
       <a-camera><a-cursor></a-cursor></a-camera>
     </a-scene>
   </body>
-
-  <script src="node_modules/socket.io-client/dist/socket.io.js"></script>
-  <script>
-    var socket = io('http://localhost:3000');
-    socket.on('news', function (data) {
-      console.log(data);
-      socket.emit('my other event', { my: 'data' });
-    });
-  </script>
 </html>

@@ -8,8 +8,10 @@ server.listen(3000);
 app.use(express.static(__dirname + '/'));
 
 io.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
+  socket.on('mouseenter', function (data) {
+    console.log(data);
+  });
+  socket.on('mouseleave', function (data) {
     console.log(data);
   });
 });
